@@ -59,13 +59,85 @@ class Comlink:
             return response
         except Exception as e:
             raise e
+    
+    async def get_metadata(self,
+                           enums: bool = False,
+                           clientSpecs: dict = None):
+        """
+        Get metadata for the game
 
-    async def get_events(self, enums=False):
+        Args:
+            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+            clientSpecs (dict, optional): The client specs to return metadata for (see Comlink documentation). Defaults to None.
+
+        Returns: dict
+        """
+        endpoint = "/metadata"
+        payload = {
+            "enums": enums
+        }
+        if clientSpecs and isinstance(clientSpecs, dict):
+            payload["payload"] = {"clientSpecs": clientSpecs}
+        
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+    
+    async def get_latest_game_version(self):
+        """
+        Get the latest versions of the game and localization bundles
+
+        Returns: dict
+            key: game
+            key: localization
+        """
+        metadata = await self.get_metadata()
+        version = {
+            "game": metadata['latestGamedataVersion'],
+            "localization": metadata['latestLocalizationBundleVersion']
+        }
+        return version
+    
+    async def get_localization(self, 
+                               id: str = None, 
+                               unzip: bool = False, 
+                               locale: str = None,
+                               enums: bool = False):
+        """
+        Get localization values for the game
+
+        Args:
+            id (str, optional): The localization version to get. Automatically gets the latest version if not provided.
+            unzip (bool, optional): Unzip the response from base64. Defaults to False.
+            locale (str, optional): Get only values for the specified locale (e.g. ENG_US). Defaults to None.
+            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+
+        Returns: dict 
+        """
+        endpoint = "/localization"
+        if not id:
+            version = await self.get_latest_game_version()
+            id = version['localization']
+
+        if locale:
+            id = f"{id}:{locale.upper()}"
+        
+        payload = {
+            "payload": {
+                "id": f"{id}"
+            },
+            "unzip": unzip,
+            "enums": enums
+        }
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+    
+    async def get_events(self,
+                         enums: bool = False):
         """
         Get current and scheduled events in the game
 
         Args:
-            enums (bool, optional): If the response should use enums instead of integers. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
 
         Returns: dict
         """
