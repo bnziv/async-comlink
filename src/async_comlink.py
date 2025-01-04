@@ -60,6 +60,33 @@ class Comlink:
         except Exception as e:
             raise e
 
+    async def get_events(self, enums=False):
+        """
+        Get current and scheduled events in the game
+
+        Args:
+            enums (bool, optional): If the response should use enums instead of integers. Defaults to False.
+
+        Returns: dict
+        """
+        endpoint = "/getEvents"
+        payload = {
+            "enums": enums
+        }
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+    
+    async def get_enums(self):
+        """
+        Get the enums for the API responses
+
+        Returns: dict
+        """
+        endpoint = "/enums"
+        async with self.session.get(endpoint) as response:
+            response = await response.json()
+        return response
+
     async def close(self):
         """
         Close the session
