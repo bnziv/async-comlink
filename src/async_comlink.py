@@ -14,9 +14,9 @@ class Comlink:
         Initialize
 
         Args:
-            url (str): The URL of the Comlink API [Default: http://localhost:3000]
+            url (str): The URL of the Comlink API. Defaults to "http://localhost:3000"
             host (str, optional): The host of the Comlink API
-            port (int, optional): The port of the Comlink API [Default: 3000]
+            port (int, optional): The port of the Comlink API. Defaults to 3000
         """
 
         if host:
@@ -36,6 +36,29 @@ class Comlink:
                 self.url = f"{parsed_url.scheme}://{parsed_url.hostname}:{default_port}"
 
         self.session = aiohttp.ClientSession(base_url=self.url)
+
+    async def _post(self,
+                    endpoint: str,
+                    payload: dict = None) -> dict:
+        """
+        Send a POST request to the Comlink URL
+
+        Args:
+            endpoint (str): The endpoint to send the request to
+            payload (dict, optional): The payload to send. Defaults to None.
+
+        Raises:
+            e: Exception from aiohttp
+
+        Returns:
+            dict: The response
+        """
+        try:
+            async with self.session.post(endpoint, json=payload) as response:
+                response = await response.json()
+            return response
+        except Exception as e:
+            raise e
 
     async def close(self):
         """
