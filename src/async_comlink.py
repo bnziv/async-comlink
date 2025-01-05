@@ -60,6 +60,61 @@ class Comlink:
         except Exception as e:
             raise e
     
+    async def get_player(self,
+                         allycode: str | int = None,
+                         playerId: str = None,
+                         enums: bool = False):
+        """
+        Get a player's profile including roster
+
+        Args:
+            allycode (str | int, optional): The allycode of the player. Defaults to None.
+            playerId (str, optional): The player ID of the player. Defaults to None.
+            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+
+        Returns: dict
+        """
+        endpoint = "/player"
+        payload = {
+            "payload": {},
+            "enums": enums
+        }
+        if playerId:
+            payload["payload"]["playerId"] = str(playerId)
+        elif allycode:
+            payload["payload"]["allyCode"] = str(allycode)
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+    
+    async def get_player_arena(self,
+                         allycode: str | int = None,
+                         playerId: str = None,
+                         player_details_only: bool = False,
+                         enums: bool = False):
+        """
+        Get a player's arena profile
+
+        Args:
+            allycode (str | int, optional): The allycode of the player. Defaults to None.
+            playerId (str, optional): The player ID of the player. Defaults to None.
+            player_details_only (bool, optional): Get only arena details excluding arena squads. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+
+        Returns: dict
+        """
+        endpoint = "/playerArena"
+        payload = {
+            "payload": {},
+            "enums": enums
+        }
+        if allycode:
+            payload["payload"]["allyCode"] = str(allycode)
+        elif playerId:
+            payload["payload"]["playerId"] = str(playerId)
+        payload["payload"]["playerDetailsOnly"] = player_details_only
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+
     async def get_metadata(self,
                            enums: bool = False,
                            clientSpecs: dict = None):
