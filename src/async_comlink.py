@@ -349,6 +349,70 @@ class Comlink:
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
     
+    async def get_leaderboard(self,
+                              leaderboard_type: int,
+                              event_instance_id: str = None,
+                              group_id: str = None,
+                              league: int = None,
+                              division: int = None,
+                              enums: bool = False):
+        """
+        Get the specified player leaderboard
+
+        Args:
+            leaderboard_type (int): The type of leaderboard to get (see Comlink documentation).
+            event_instance_id (str, optional): The event instance id. Defaults to None.
+            group_id (str, optional): Consists of event instance id along with league name and bracket number. Defaults to None.
+            league (int, optional): The id of the league to get. Defaults to None.
+            division (int, optional): The id of the division to get. Defaults to None.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
+
+        Returns: dict
+        """
+        endpoint = "/getLeaderboard"
+        payload = {
+            "payload": {
+                "leaderboardType": leaderboard_type
+            },
+            "enums": enums
+        }
+
+        if leaderboard_type == 4:
+            payload["payload"]["eventInstanceId"] = event_instance_id
+            payload["payload"]["groupId"] = group_id
+        elif leaderboard_type == 6:
+            payload["payload"]["league"] = league
+            payload["payload"]["division"] = division
+
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+
+    async def get_guild_leaderboard(self,
+                                    leaderboard_id: list[dict] = [],
+                                    count: int = 200,
+                                    enums: bool = False):
+        """
+        Get the specified guild leaderboard
+
+        Args:
+            leaderboard_id (list[dict], optional): Array of leaderboards to get (see Comlink documentation). Defaults to [].
+            count (int, optional): The number of guilds to return. Defaults to 200.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
+
+        Returns: dict
+        """
+        endpoint = "/getGuildLeaderboard"
+        payload = {
+            "payload": {
+                "leaderboardId": leaderboard_id,
+                "count": count
+            },
+            "enums": enums
+        }
+
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+    
     async def get_enums(self):
         """
         Get the enums for the API responses
