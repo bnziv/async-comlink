@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 from urllib.parse import urlparse
+from items import Items
 
 class Comlink:
     """
@@ -66,6 +67,18 @@ class Comlink:
                             request_segment: int = 0,
                             items: str | list = None,
                             enums: bool = False):
+        """
+        Get game data
+
+        Args:
+            version (str, optional): The version of the game data to get. Automatically gets the latest version if not provided.
+            include_pve_units (bool, optional): If the response should include PVE units. Defaults to False.
+            request_segment (int, optional): The segment of the game data to get (see Comlink documentation). Defaults to 0.
+            items (str | list, optional): The items to include in the response (see Items class). Defaults to None.
+            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+
+        Returns: dict
+        """
         endpoint = "/data"
         if not version:
             version = await self.get_latest_game_version()
@@ -80,7 +93,8 @@ class Comlink:
         }
 
         if items:
-            pass
+            value = Items.get_value(items)
+            payload["payload"]["items"] = str(value)
         else:
             payload["payload"]["requestSegment"] = request_segment
 
