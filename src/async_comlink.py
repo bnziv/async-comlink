@@ -60,6 +60,33 @@ class Comlink:
         except Exception as e:
             raise e
     
+    async def get_game_data(self,
+                            version: str = None,
+                            include_pve_units: bool = False,
+                            request_segment: int = 0,
+                            items: str | list = None,
+                            enums: bool = False):
+        endpoint = "/data"
+        if not version:
+            version = await self.get_latest_game_version()
+            version = version['game']
+        
+        payload = {
+            "payload": {
+                "version": f"{version}",
+                "includePveUnits": include_pve_units
+            },
+            "enums": enums
+        }
+
+        if items:
+            pass
+        else:
+            payload["payload"]["requestSegment"] = request_segment
+
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+
     async def get_player(self,
                          allycode: str | int = None,
                          playerId: str = None,
