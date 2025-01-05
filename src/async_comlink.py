@@ -75,7 +75,7 @@ class Comlink:
             include_pve_units (bool, optional): If the response should include PVE units. Defaults to False.
             request_segment (int, optional): The segment of the game data to get (see Comlink documentation). Defaults to 0.
             items (str | list, optional): The items to include in the response (see Items class). Defaults to None.
-            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
 
         Returns: dict
         """
@@ -111,7 +111,7 @@ class Comlink:
         Args:
             allycode (str | int, optional): The allycode of the player. Defaults to None.
             playerId (str, optional): The player ID of the player. Defaults to None.
-            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
 
         Returns: dict
         """
@@ -139,7 +139,7 @@ class Comlink:
             allycode (str | int, optional): The allycode of the player. Defaults to None.
             playerId (str, optional): The player ID of the player. Defaults to None.
             player_details_only (bool, optional): Get only arena details excluding arena squads. Defaults to False.
-            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
 
         Returns: dict
         """
@@ -163,7 +163,7 @@ class Comlink:
         Get metadata for the game
 
         Args:
-            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
             clientSpecs (dict, optional): The client specs to return metadata for (see Comlink documentation). Defaults to None.
 
         Returns: dict
@@ -205,7 +205,7 @@ class Comlink:
             id (str, optional): The localization version to get. Automatically gets the latest version if not provided.
             unzip (bool, optional): Unzip the response from base64. Defaults to False.
             locale (str, optional): Get only values for the specified locale (e.g. ENG_US). Defaults to None.
-            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
 
         Returns: dict 
         """
@@ -233,7 +233,7 @@ class Comlink:
         Get current and scheduled events in the game
 
         Args:
-            enums (bool, optional): If the response should use enum values instead of integers. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
 
         Returns: dict
         """
@@ -241,6 +241,111 @@ class Comlink:
         payload = {
             "enums": enums
         }
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+    
+    async def get_guild(self,
+                        guildId: str,
+                        include_recent_activity: bool = False,
+                        enums: bool = False):
+        """
+        Get a guild's profile
+
+        Args:
+            guildId (str): The ID of the guild.
+            include_recent_activity (bool, optional): Include more info on members and recent guild events. Defaults to False.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
+
+        Returns:
+            _type_: _description_
+        """
+        endpoint = "/guild"
+        payload = {
+            "payload": {
+                "guildId": guildId,
+                "includeRecentGuildActivityInfo": include_recent_activity
+            },
+            "enums": enums
+        }
+        
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+    
+    async def get_guilds_by_name(self,
+                                 name: str,
+                                 start_index: int = 0,
+                                 count: int = 10,
+                                 enums: bool = False):
+        """
+        Search guilds by name
+
+        Args:
+            name (str): The name of the guild.
+            start_index (int, optional): The index to start from (currently ignored by Comlink). Defaults to 0.
+            count (int, optional): The number of guilds to return. Defaults to 10.
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
+
+        Returns: dict
+        """
+        endpoint = "/getGuilds"
+        payload = {
+            "payload": {
+                "filterType": 4,
+                "startIndex": start_index,
+                "name": name,
+                "count": count
+            },
+            "enums": enums
+        }
+
+        response = await self._post(endpoint=endpoint, payload=payload)
+        return response
+
+    async def get_guilds_by_criteria(self,
+                                     start_index: int = 0,
+                                     count: int = 10,
+                                     min_member_count: int = 1,
+                                     max_member_count: int = 50,
+                                     include_invite_only: bool = False,
+                                     min_galactic_power: int = 1,
+                                     max_galactic_power: int = 500000000,
+                                     recent_tb: list[str] = [],
+                                     enums: bool = False
+                                     ):
+        """
+        Search guilds by a criteria
+
+        Args:
+            start_index (int, optional): The index to start from (currently ignored by Comlink). Defaults to 0.
+            count (int, optional): The number of guilds to return. Defaults to 10.
+            min_member_count (int, optional): The minimum number of members already in the guild. Defaults to 1.
+            max_member_count (int, optional): The maximum number of members allowed in the guild. Defaults to 50.
+            include_invite_only (bool, optional): Include invite only guilds. Defaults to False.
+            min_galactic_power (int, optional): The minimum total galactic power the guild has. Defaults to 1.
+            max_galactic_power (int, optional): The maximum total galactic power the guild has. Defaults to 500000000.
+            recent_tb (list[str], optional): An arra of Territory Battle ids that the guild has recently done. Defaults to [].
+            enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
+
+        Returns: dict
+        """
+        endpoint = "/getGuilds"
+        payload = {
+            "payload": {
+                "filterType": 5,
+                "startIndex": start_index,
+                "count": count,
+                "searchCriteria": {
+                    "minMemberCount": min_member_count,
+                    "maxMemberCount": max_member_count,
+                    "includeInviteOnly": include_invite_only,
+                    "minGuildGalacticPower": min_galactic_power,
+                    "maxGuildGalacticPower": max_galactic_power,
+                    "recentTbParticipatedIn": recent_tb
+                }
+            },
+            "enums": enums
+        }
+
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
     
