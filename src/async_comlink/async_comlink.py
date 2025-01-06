@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 from urllib.parse import urlparse
 from items import Items
-from helpers import get_logger
+from helpers import get_logger, get_hmac
 
 class Comlink:
     """
@@ -12,6 +12,8 @@ class Comlink:
                  url: str = "http://localhost:3000",
                  host: str | None = None,
                  port: int = 3000,
+                 secret_key: str | None = None,
+                 access_key: str | None = None,
                  debug: bool = False):
         """
         Initialize
@@ -39,6 +41,13 @@ class Comlink:
                 default_port = 443 if parsed_url.scheme == "https" else 80
                 self.url = f"{parsed_url.scheme}://{parsed_url.hostname}:{default_port}"
 
+        if secret_key and access_key:
+            self.hmac = True
+            self.secret_key = secret_key
+            self.access_key = access_key
+        else:
+            self.hmac = False
+        
         self.debug = debug
         if self.debug:
             self.logger = get_logger()
@@ -69,13 +78,16 @@ class Comlink:
         Returns:
             dict: The response
         """
-        #TODO: Add HMAC signature
+        headers = {}
+        if self.hmac:
+            headers = get_hmac(endpoint, self.secret_key, self.access_key, payload)
+        
         for _ in range(3):
             try:
                 if self.debug:
                     self.logger.debug(f"POST {endpoint} {payload}")
 
-                async with self.session.post(endpoint, json=payload) as response:
+                async with self.session.post(endpoint, json=payload, headers=headers) as response:
                     if self.debug:
                         self.logger.debug(f"{endpoint} {response.status}")
                     response = await response.json()
@@ -85,7 +97,7 @@ class Comlink:
                 if self.debug:
                     self.logger.debug(f"{e} - Retrying...")
                 continue
-            
+
             except Exception as e:
                 await self._raise_exception(e)
         
