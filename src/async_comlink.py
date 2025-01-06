@@ -36,7 +36,15 @@ class Comlink:
                 default_port = 443 if parsed_url.scheme == "https" else 80
                 self.url = f"{parsed_url.scheme}://{parsed_url.hostname}:{default_port}"
 
-        self.session = aiohttp.ClientSession(base_url=self.url)
+        self.session = None
+        self.open()
+
+    def open(self):
+        """
+        Open the session
+        """
+        if not self.session:
+            self.session = aiohttp.ClientSession(base_url=self.url)
 
     async def _post(self,
                     endpoint: str,
@@ -54,6 +62,8 @@ class Comlink:
         Returns:
             dict: The response
         """
+        #TODO: Add retry logic
+        #TODO: Add HMAC signature
         try:
             async with self.session.post(endpoint, json=payload) as response:
                 response = await response.json()
@@ -65,7 +75,7 @@ class Comlink:
                             version: str = None,
                             include_pve_units: bool = False,
                             request_segment: int = 0,
-                            items: str | list = None,
+                            items: str | list[str] = None,
                             enums: bool = False):
         """
         Get game data
@@ -74,7 +84,7 @@ class Comlink:
             version (str, optional): The version of the game data to get. Automatically gets the latest version if not provided.
             include_pve_units (bool, optional): If the response should include PVE units. Defaults to False.
             request_segment (int, optional): The segment of the game data to get (see Comlink documentation). Defaults to 0.
-            items (str | list, optional): The items to include in the response (see Items class). Defaults to None.
+            items (str | list[str], optional): The items to include in the response (see Items class). Defaults to None.
             enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
 
         Returns: dict
@@ -92,7 +102,7 @@ class Comlink:
             "enums": enums
         }
 
-        if items:
+        if items and (isinstance(items, str) or isinstance(items, list)):
             value = Items.get_value(items)
             payload["payload"]["items"] = str(value)
         else:
@@ -124,6 +134,10 @@ class Comlink:
             payload["payload"]["playerId"] = str(playerId)
         elif allycode:
             payload["payload"]["allyCode"] = str(allycode)
+        else:
+            e = ValueError("allycode or playerId must be provided")
+            await self._raise_exception(e)
+        
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
     
@@ -148,11 +162,15 @@ class Comlink:
             "payload": {},
             "enums": enums
         }
-        if allycode:
-            payload["payload"]["allyCode"] = str(allycode)
-        elif playerId:
+        if playerId:
             payload["payload"]["playerId"] = str(playerId)
+        elif allycode:
+            payload["payload"]["allyCode"] = str(allycode)
+        else:
+            e = ValueError("allycode or playerId must be provided")
+            await self._raise_exception(e)
         payload["payload"]["playerDetailsOnly"] = player_details_only
+
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
 
@@ -174,6 +192,9 @@ class Comlink:
         }
         if clientSpecs and isinstance(clientSpecs, dict):
             payload["payload"] = {"clientSpecs": clientSpecs}
+        elif clientSpecs and not isinstance(clientSpecs, dict):
+            e = ValueError("clientSpecs must be a dictionary")
+            await self._raise_exception(e)
         
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
@@ -241,6 +262,7 @@ class Comlink:
         payload = {
             "enums": enums
         }
+
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
     
@@ -323,7 +345,7 @@ class Comlink:
             include_invite_only (bool, optional): Include invite only guilds. Defaults to False.
             min_galactic_power (int, optional): The minimum total galactic power the guild has. Defaults to 1.
             max_galactic_power (int, optional): The maximum total galactic power the guild has. Defaults to 500000000.
-            recent_tb (list[str], optional): An arra of Territory Battle ids that the guild has recently done. Defaults to [].
+            recent_tb (list[str], optional): An array of Territory Battle ids that the guild has recently done. Defaults to [].
             enums (bool, optional): If the response should use enum values instead of assigned integers. Defaults to False.
 
         Returns: dict
@@ -377,12 +399,20 @@ class Comlink:
             "enums": enums
         }
 
-        if leaderboard_type == 4:
-            payload["payload"]["eventInstanceId"] = event_instance_id
-            payload["payload"]["groupId"] = group_id
-        elif leaderboard_type == 6:
-            payload["payload"]["league"] = league
-            payload["payload"]["division"] = division
+        leaderboard_requirements = {
+            4: [("eventInstanceId", event_instance_id), ("groupId", group_id)],
+            6: [("league", league), ("division", division)]
+        }
+
+        if leaderboard_type not in leaderboard_requirements:
+            e = ValueError(f"Invalid leaderboard type: {leaderboard_type}")
+            await self._raise_exception(e)
+
+        for param, value in leaderboard_requirements[leaderboard_type]:
+            if not value:
+                e = ValueError(f"Leaderboard type {leaderboard_type} requires {param}")
+                await self._raise_exception(e)
+            payload["payload"][param] = value
 
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
@@ -436,8 +466,16 @@ class Comlink:
         """
         Close the session when the object is deleted
         """
-        if self.session and not self.session.closed:
-            if asyncio.get_event_loop().is_running():
-                asyncio.create_task(self.close())
-            else:
-                asyncio.run(self.close())
+        try:
+            if self.session and not self.session.closed:
+                if asyncio.get_event_loop().is_running():
+                    asyncio.create_task(self.close())
+        except Exception:
+            asyncio.run(self.close())
+    
+    async def _raise_exception(self, e):
+        """
+        Close the session then raise the exception
+        """
+        await self.close()
+        raise e
