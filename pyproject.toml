@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "async-comlink"
+version = "1.0.0"
+description = "Asynchronous Python wrapper for the swgoh-comlink API"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "bnziv"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
+dependencies = [
+    "aiohttp"
+]
