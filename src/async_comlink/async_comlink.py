@@ -1,12 +1,12 @@
 import aiohttp
 import asyncio
 from urllib.parse import urlparse
-from items import Items
-from helpers import get_logger, get_hmac
+from .items import Items
+from .helpers import get_logger, get_hmac
 
-class Comlink:
+class AsyncComlink:
     """
-    Async wrapper for Comlink API
+    Asynchronous Python wrapper for the swgoh-comlink API
     """
     def __init__(self, 
                  url: str = "http://localhost:3000",
@@ -16,12 +16,14 @@ class Comlink:
                  access_key: str | None = None,
                  debug: bool = False):
         """
-        Initialize
+        Initialize a session with the Comlink API
 
         Args:
             url (str): The URL of the Comlink API. Defaults to "http://localhost:3000"
             host (str, optional): The host of the Comlink API
             port (int, optional): The port of the Comlink API. Defaults to 3000
+            secret_key (str, optional): The secret key to use for HMAC authentication
+            access_key (str, optional): The access key to use for HMAC authentication
             debug (bool, optional): If debug mode should be enabled and stop exceptions from being raised on error. Defaults to False
         """
 
@@ -109,7 +111,7 @@ class Comlink:
                             include_pve_units: bool = False,
                             request_segment: int = 0,
                             items: str | list[str] = None,
-                            enums: bool = False):
+                            enums: bool = False) -> dict:
         """
         Get game data
 
@@ -147,7 +149,7 @@ class Comlink:
     async def get_player(self,
                          allycode: str | int = None,
                          playerId: str = None,
-                         enums: bool = False):
+                         enums: bool = False) -> dict:
         """
         Get a player's profile including roster
 
@@ -178,7 +180,7 @@ class Comlink:
                          allycode: str | int = None,
                          playerId: str = None,
                          player_details_only: bool = False,
-                         enums: bool = False):
+                         enums: bool = False) -> dict:
         """
         Get a player's arena profile
 
@@ -209,7 +211,7 @@ class Comlink:
 
     async def get_metadata(self,
                            enums: bool = False,
-                           clientSpecs: dict = None):
+                           clientSpecs: dict = None) -> dict:
         """
         Get metadata for the game
 
@@ -232,7 +234,7 @@ class Comlink:
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
     
-    async def get_latest_game_version(self):
+    async def get_latest_game_version(self) -> dict:
         """
         Get the latest versions of the game and localization bundles
 
@@ -251,7 +253,7 @@ class Comlink:
                                id: str = None, 
                                unzip: bool = False, 
                                locale: str = None,
-                               enums: bool = False):
+                               enums: bool = False) -> dict:
         """
         Get localization values for the game
 
@@ -282,7 +284,7 @@ class Comlink:
         return response
     
     async def get_events(self,
-                         enums: bool = False):
+                         enums: bool = False) -> dict:
         """
         Get current and scheduled events in the game
 
@@ -302,7 +304,7 @@ class Comlink:
     async def get_guild(self,
                         guildId: str,
                         include_recent_activity: bool = False,
-                        enums: bool = False):
+                        enums: bool = False) -> dict:
         """
         Get a guild's profile
 
@@ -330,7 +332,7 @@ class Comlink:
                                  name: str,
                                  start_index: int = 0,
                                  count: int = 10,
-                                 enums: bool = False):
+                                 enums: bool = False) -> dict:
         """
         Search guilds by name
 
@@ -366,7 +368,7 @@ class Comlink:
                                      max_galactic_power: int = 500000000,
                                      recent_tb: list[str] = [],
                                      enums: bool = False
-                                     ):
+                                     ) -> dict:
         """
         Search guilds by a criteria
 
@@ -410,7 +412,7 @@ class Comlink:
                               group_id: str = None,
                               league: int = None,
                               division: int = None,
-                              enums: bool = False):
+                              enums: bool = False) -> dict:
         """
         Get the specified player leaderboard
 
@@ -453,7 +455,7 @@ class Comlink:
     async def get_guild_leaderboard(self,
                                     leaderboard_id: list[dict] = [],
                                     count: int = 200,
-                                    enums: bool = False):
+                                    enums: bool = False) -> dict:
         """
         Get the specified guild leaderboard
 
@@ -476,7 +478,7 @@ class Comlink:
         response = await self._post(endpoint=endpoint, payload=payload)
         return response
     
-    async def get_enums(self):
+    async def get_enums(self) -> dict:
         """
         Get the enums for the API responses
 
