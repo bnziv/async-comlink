@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 from urllib.parse import urlparse
 from items import Items
+from helpers import get_logger
 
 class Comlink:
     """
@@ -10,7 +11,8 @@ class Comlink:
     def __init__(self, 
                  url: str = "http://localhost:3000",
                  host: str | None = None,
-                 port: int = 3000):
+                 port: int = 3000,
+                 debug: bool = False):
         """
         Initialize
 
@@ -18,6 +20,7 @@ class Comlink:
             url (str): The URL of the Comlink API. Defaults to "http://localhost:3000"
             host (str, optional): The host of the Comlink API
             port (int, optional): The port of the Comlink API. Defaults to 3000
+            debug (bool, optional): If debug mode should be enabled and stop exceptions from being raised on error. Defaults to False
         """
 
         if host:
@@ -35,6 +38,10 @@ class Comlink:
             if not parsed_url.port:
                 default_port = 443 if parsed_url.scheme == "https" else 80
                 self.url = f"{parsed_url.scheme}://{parsed_url.hostname}:{default_port}"
+
+        self.debug = debug
+        if self.debug:
+            self.logger = get_logger()
 
         self.session = None
         self.open()
@@ -62,14 +69,28 @@ class Comlink:
         Returns:
             dict: The response
         """
-        #TODO: Add retry logic
         #TODO: Add HMAC signature
-        try:
-            async with self.session.post(endpoint, json=payload) as response:
-                response = await response.json()
-            return response
-        except Exception as e:
-            raise e
+        for _ in range(3):
+            try:
+                if self.debug:
+                    self.logger.debug(f"POST {endpoint} {payload}")
+
+                async with self.session.post(endpoint, json=payload) as response:
+                    if self.debug:
+                        self.logger.debug(f"{endpoint} {response.status}")
+                    response = await response.json()
+                return response
+            
+            except aiohttp.ClientError as e:
+                if self.debug:
+                    self.logger.debug(f"{e} - Retrying...")
+                continue
+            
+            except Exception as e:
+                await self._raise_exception(e)
+        
+        e = Exception(f"Failed to get response at {endpoint}")
+        await self._raise_exception(e)
     
     async def get_game_data(self,
                             version: str = None,
@@ -475,7 +496,10 @@ class Comlink:
     
     async def _raise_exception(self, e):
         """
-        Close the session then raise the exception
+        Close the session and raise the exception or log the exception if debugging 
         """
-        await self.close()
-        raise e
+        if not self.debug:
+            await self.close()
+            raise e
+        else:
+            self.logger.error(e)
