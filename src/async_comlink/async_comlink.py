@@ -6,7 +6,7 @@ from .helpers import get_logger, get_hmac
 
 class AsyncComlink:
     """
-    Asynchronous Python wrapper for the swgoh-comlink API
+    Asynchronous Python wrapper for the swgoh-comlink service
     """
     def __init__(self, 
                  url: str = "http://localhost:3000",
@@ -16,15 +16,15 @@ class AsyncComlink:
                  access_key: str | None = None,
                  debug: bool = False):
         """
-        Initialize a session with the Comlink API
+        Initialize an AsyncComlink instance to interact with the swgoh-comlink service
 
         Args:
-            url (str): The URL of the Comlink API. Defaults to "http://localhost:3000"
-            host (str, optional): The host of the Comlink API
-            port (int, optional): The port of the Comlink API. Defaults to 3000
+            url (str): The URL of the swgoh-comlink service. Defaults to "http://localhost:3000"
+            host (str, optional): The host of the swgoh-comlink service
+            port (int, optional): The port of the swgoh-comlink service. Defaults to 3000
             secret_key (str, optional): The secret key to use for HMAC authentication
             access_key (str, optional): The access key to use for HMAC authentication
-            debug (bool, optional): If debug mode should be enabled and stop exceptions from being raised on error. Defaults to False
+            debug (bool, optional): If debug mode should be enabled to log requests and suppress raised exceptions on errors. Defaults to False
         """
 
         if host:
@@ -55,9 +55,8 @@ class AsyncComlink:
             self.logger = get_logger()
 
         self.session = None
-        self.open()
 
-    def open(self):
+    def _open(self):
         """
         Open the session
         """
@@ -68,7 +67,7 @@ class AsyncComlink:
                     endpoint: str,
                     payload: dict = None) -> dict:
         """
-        Send a POST request to the Comlink URL
+        Send a POST request to the swgoh-comlink URL
 
         Args:
             endpoint (str): The endpoint to send the request to
@@ -80,6 +79,9 @@ class AsyncComlink:
         Returns:
             dict: The response
         """
+        if not self.session:
+            self._open()
+
         headers = {}
         if self.hmac:
             headers = get_hmac(endpoint, self.secret_key, self.access_key, payload)
